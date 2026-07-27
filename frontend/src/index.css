@@ -1,0 +1,21 @@
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: #07111f;
+  color: #f3f4f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button, input {
+  font: inherit;
+}
+
+.card {
+  background: #111827;
+  border: 1px solid #243244;
+  border-radius: 12px;
+  padding: 12px;
+}
