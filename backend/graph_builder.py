@@ -1,9 +1,12 @@
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import networkx as nx
 
-from complexity import get_complexity_risk, get_cyclomatic_complexity
+try:
+    from .complexity import get_complexity_risk, get_cyclomatic_complexity
+except ImportError:  # pragma: no cover
+    from complexity import get_complexity_risk, get_cyclomatic_complexity
 
 
 class CodeGraph:

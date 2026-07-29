@@ -1,14 +1,17 @@
 import os
-from typing import Dict, List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from parser_engine import parse_file
-from graph_builder import CodeGraph
-from vector_search import get_embedding, search_code
-from complexity import get_cyclomatic_complexity, get_complexity_risk
+try:
+    from .parser_engine import parse_file
+    from .graph_builder import CodeGraph
+    from .vector_search import get_embedding, search_code
+except ImportError:  # pragma: no cover
+    from parser_engine import parse_file
+    from graph_builder import CodeGraph
+    from vector_search import get_embedding, search_code
 
 app = FastAPI(title="CodeKG")
 app.add_middleware(
