@@ -1,11 +1,7 @@
-tree-sitter==0.26.0
-tree-sitter-python
-tree-sitter-javascript
-tree-sitter-languages
-networkx
 fastapi
 uvicorn
 pydantic
+networkx
 numpy
-openai
 python-dotenv
+openai
