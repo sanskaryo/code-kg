@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeKG - Code Knowledge Graph</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: #0b0f19;
+      color: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      background: #111827;
+      border-bottom: 1px solid #1f293d;
+      padding: 12px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: #60a5fa;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo span {
+      color: #94a3b8;
+      font-weight: 400;
+      font-size: 14px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #1e293b;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+
+    .filter-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .filter-item input {
+      cursor: pointer;
+      accent-color: #3b82f6;
+    }
+
+    input[type="text"] {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: #3b82f6;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    button.secondary {
+      background: #334155;
+    }
+
+    button.secondary:hover {
+      background: #475569;
+    }
+
+    button.success {
+      background: #059669;
+    }
+
+    button.success:hover {
+      background: #047857;
+    }
+
+    .main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .graph-view {
+      flex: 1;
+      position: relative;
+      background: radial-gradient(circle at center, #111827 0%, #0b0f19 100%);
+      overflow: hidden;
+      cursor: grab;
+    }
+
+    .graph-view:active {
+      cursor: grabbing;
+    }
+
+    svg#graph-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .side-panel {
+      width: 380px;
+      background: #111827;
+      border-left: 1px solid #1f293d;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+
+    .node-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 4px;
+    }
+
+    .node-meta {
+      font-size: 12px;
+      color: #64748b;
+      font-family: 'Fira Code', monospace;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-low {
+      background: #065f46;
+      color: #34d399;
+    }
+
+    .badge-medium {
+      background: #854d0e;
+      color: #fde047;
+    }
+
+    .badge-high {
+      background: #991b1b;
+      color: #fca5a5;
+    }
+
+    pre code {
+      font-family: 'Fira Code', monospace;
+      font-size: 12px;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .legend {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid #1f293d;
+      padding: 10px 14px;
+      border-radius: 8px;
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      backdrop-filter: blur(4px);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .zoom-controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      gap: 6px;
+      z-index: 10;
+    }
+
+    .zoom-controls button {
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .status-bar {
+      padding: 6px 24px;
+      background: #090d16;
+      border-top: 1px solid #1f293d;
+      font-size: 12px;
+      color: #64748b;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Hover Feature Info Badge & Tooltips */
+    .info-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b82f6;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 11px;
+      cursor: help;
+      user-select: none;
+    }
+
+    .info-tooltip-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .info-tooltip-box {
+      visibility: hidden;
+      opacity: 0;
+      width: 300px;
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 14px;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .info-tooltip-container:hover .info-tooltip-box {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .info-tooltip-box h4 {
+      color: #60a5fa;
+      font-size: 13px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .info-tooltip-box ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .info-tooltip-box li {
+      margin-bottom: 8px;
+    }
+
+    .info-tooltip-box li:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-tooltip-box strong {
+      color: #f8fafc;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="header-top">
+      <div class="logo">
+        ⚡ CodeKG <span>Knowledge Graph Engine</span>
+      </div>
+      <div class="controls">
+        <input type="text" id="repoPathInput" placeholder="Enter folder path (e.g. C:/my_project)..." value="test_repo" style="width: 280px;" title="Type folder path to scan a custom local repository" />
+        <button class="secondary" onclick="scanCustomRepo()" title="Parses source files in the given folder and renders knowledge graph">Scan Local Folder</button>
+
+        <input type="text" id="searchInput" placeholder="Search code..." style="width: 160px;" title="Type entity name or search phrase" />
+        <button onclick="handleSearch()" title="Executes vector search across code entities">Search</button>
+        <button class="secondary" onclick="scanRepo()" title="Re-indexes the default test repository">Rescan Repo</button>
+        <button class="secondary" onclick="checkCycles()" title="Finds circular dependency loops and highlights affected nodes in yellow">Check Cycles</button>
+        <button class="secondary" onclick="downloadDiagram()" title="Export interactive graph canvas as high-resolution SVG diagram">Download Diagram</button>
+      </div>
+    </div>
+
+    <!-- Filters Bar for Large Codebases -->
+    <div class="filter-bar">
+      <span style="font-weight: 600; color: #94a3b8;">Show Entities:</span>
+      <label class="filter-item" title="Toggle visibility of module nodes"><input type="checkbox" id="showModules" checked onchange="renderGraph()"> Modules</label>
+      <label class="filter-item" title="Toggle visibility of class nodes"><input type="checkbox" id="showClasses" checked onchange="renderGraph()"> Classes</label>
+      <label class="filter-item" title="Toggle visibility of function nodes"><input type="checkbox" id="showFunctions" checked onchange="renderGraph()"> Functions</label>
+      <label class="filter-item" title="Toggle visibility of import dependency nodes"><input type="checkbox" id="showImports" onchange="renderGraph()"> Imports</label>
+      <label class="filter-item" title="Toggle visibility of function call connections"><input type="checkbox" id="showCalls" onchange="renderGraph()"> Calls</label>
+      <label class="filter-item" style="margin-left: auto;" title="Force display all text labels on canvas"><input type="checkbox" id="showLabels" onchange="renderGraph()"> Show All Text Labels</label>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div class="graph-view" id="graphContainer">
+      <div class="zoom-controls">
+        <button class="secondary" onclick="zoomIn()" title="Zoom in canvas (+)">+</button>
+        <button class="secondary" onclick="zoomOut()" title="Zoom out canvas (-)">-</button>
+        <button class="secondary" onclick="resetZoom()" title="Reset canvas zoom and view position">Reset View</button>
+        <button class="secondary" onclick="downloadDiagram()" title="Export interactive graph canvas as high-resolution SVG diagram">Export SVG</button>
+      </div>
+
+      <svg id="graph-canvas">
+        <g id="viewport-group"></g>
+      </svg>
+
+      <div class="legend">
+        <div class="legend-item"><div class="dot" style="background: #3b82f6;"></div> Module</div>
+        <div class="legend-item"><div class="dot" style="background: #10b981;"></div> Class</div>
+        <div class="legend-item"><div class="dot" style="background: #f97316;"></div> Function</div>
+        <div class="legend-item"><div class="dot" style="background: #a855f7;"></div> Import</div>
+        <div class="legend-item"><div class="dot" style="background: #ec4899;"></div> Call</div>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="card" id="guideCard">
+        <div class="card-title" style="display: flex; align-items: center; justify-content: space-between;">
+          <span>Feature & Controls Guide</span>
+          <div class="info-tooltip-container">
+            <span class="info-badge" title="Hover for detailed button & feature guide">i</span>
+            <div class="info-tooltip-box">
+              <h4>💡 Button & Feature Overview</h4>
+              <ul>
+                <li><strong>Scan Local Folder:</strong> Indexes and parses all C++, Java, Python source files in the entered directory path into graph nodes.</li>
+                <li><strong>Search Code:</strong> Performs semantic search across functions, classes, and code logic.</li>
+                <li><strong>Rescan Repo:</strong> Re-indexes the default test repository.</li>
+                <li><strong>Check Cycles:</strong> Finds circular dependency loops in code and highlights affected nodes in <span style="color:#facc15;">Yellow</span>.</li>
+                <li><strong>Blast Radius:</strong> Highlights all upstream caller functions impacted by changing a node in <span style="color:#ef4444;">Red</span>.</li>
+                <li><strong>Export SVG / Download Diagram:</strong> Downloads the current interactive graph diagram as an SVG vector image.</li>
+                <li><strong>Entity Checkboxes:</strong> Toggle visibility of Modules, Classes, Functions, Imports, or Call edges.</li>
+                <li><strong>Canvas Navigation:</strong> Click & drag background to pan, scroll wheel or +/- buttons to zoom, click any node to view source code.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 12px; color: #94a3b8; line-height: 1.4;">
+          Hover over the <span class="info-badge" style="width: 16px; height: 16px; font-size: 10px;">i</span> icon or any button to learn what each feature does.
+        </p>
+      </div>
+
+      <div class="card" id="detailsCard">
+        <div class="card-title">Entity Inspector</div>
+        <div id="inspectorContent">
+          <p style="color: #64748b; font-size: 14px;">Click any node in the graph to inspect details.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Blast Radius Analysis</div>
+        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 12px;">
+          Select a node and click below to highlight all upstream dependent code components.
+        </p>
+        <button id="blastBtn" style="width: 100%;" disabled onclick="calculateBlastRadius()" title="Calculates all upstream caller functions that depend on the selected node">Calculate Impacted Callers</button>
+        <div id="blastResults" style="margin-top: 12px; font-size: 12px; color: #ef4444;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Search Results</div>
+        <div id="searchResultsList" style="font-size: 13px; color: #cbd5e1;">
+          <p style="color: #64748b;">No active search.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <span id="nodeCount">Nodes: 0 | Edges: 0</span>
+    <span>Status: Ready</span>
+  </div>
+
+  <script>
+    let graphData = { nodes: [], edges: [] };
+    let selectedNodeId = null;
+    let highlightedNodes = new Set();
+    let cycleNodes = new Set();
+
+    // Zoom & Pan state
+    let zoomLevel = 1;
+    let panX = 0;
+    let panY = 0;
+    let isDragging = false;
+    let hasDragged = false;
+    let startX = 0;
+    let startY = 0;
+
+    const colorMap = {
+      Module: '#3b82f6',
+      Class: '#10b981',
+      Function: '#f97316',
+      Import: '#a855f7',
+      Call: '#ec4899'
+    };
+
+    async function loadGraph() {
+      try {
+        const res = await fetch('/api/graph');
+        graphData = await res.json();
+        renderGraph();
+        document.getElementById('nodeCount').innerText = `Total Extracted: ${graphData.nodes.length} Nodes | ${graphData.edges.length} Edges`;
+      } catch (err) {
+        console.error('Failed to load graph:', err);
+      }
+    }
+
+    async function scanRepo() {
+      await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo_path: 'test_repo' })
+      });
+      loadGraph();
+    }
+
+    async function scanCustomRepo() {
+      const path = document.getElementById('repoPathInput').value.trim();
+      if (!path) return alert('Please enter a valid folder path!');
+
+      document.getElementById('nodeCount').innerText = 'Scanning folder...';
+
+      try {
+        const res = await fetch('/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ repo_path: path })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          alert(`Successfully scanned! Found ${data.nodes} entities & ${data.edges} connections in ${data.elapsed_seconds}s.`);
+          await loadGraph();
+        } else {
+          alert(data.detail || 'Folder not found on your computer!');
+          document.getElementById('nodeCount').innerText = 'Error: Folder not found';
+        }
+      } catch (err) {
+        alert('Failed to connect to server: ' + err);
+        document.getElementById('nodeCount').innerText = 'Error connecting to server';
+      }
+    }
+
+    function renderGraph() {
+      const viewport = document.getElementById('viewport-group');
+      viewport.innerHTML = '';
+
+      const svg = document.getElementById('graph-canvas');
+      const width = svg.clientWidth || 800;
+      const height = svg.clientHeight || 600;
+      const centerX = width / 2;
+      const centerY = height / 2;
+
+      // Filter active node types
+      const activeTypes = new Set();
+      if (document.getElementById('showModules').checked) activeTypes.add('Module');
+      if (document.getElementById('showClasses').checked) activeTypes.add('Class');
+      if (document.getElementById('showFunctions').checked) activeTypes.add('Function');
+      if (document.getElementById('showImports').checked) activeTypes.add('Import');
+      if (document.getElementById('showCalls').checked) activeTypes.add('Call');
+
+      const visibleNodes = graphData.nodes.filter(n => activeTypes.has(n.type));
+      const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
+
+      const visibleEdges = graphData.edges.filter(
+        e => visibleNodeIds.has(e.source) && visibleNodeIds.has(e.target)
+      );
+
+      // Separate nodes into Concentric Rings by Type to prevent overlap!
+      const modules = visibleNodes.filter(n => n.type === 'Module');
+      const classesFuncs = visibleNodes.filter(n => n.type === 'Class' || n.type === 'Function');
+      const importsCalls = visibleNodes.filter(n => n.type === 'Import' || n.type === 'Call');
+
+      const posMap = {};
+
+      // Ring 1: Modules (Inner Ring)
+      const r1 = 130;
+      modules.forEach((node, i) => {
+        const angle = (i / (modules.length || 1)) * 2 * Math.PI;
+        posMap[node.id] = { x: centerX + r1 * Math.cos(angle), y: centerY + r1 * Math.sin(angle) };
+      });
+
+      // Ring 2: Classes & Functions (Middle Ring)
+      const r2 = 280;
+      classesFuncs.forEach((node, i) => {
+        const angle = (i / (classesFuncs.length || 1)) * 2 * Math.PI;
+        posMap[node.id] = { x: centerX + r2 * Math.cos(angle), y: centerY + r2 * Math.sin(angle) };
+      });
+
+      // Ring 3: Imports & Calls (Outer Ring)
+      const r3 = 440;
+      importsCalls.forEach((node, i) => {
+        const angle = (i / (importsCalls.length || 1)) * 2 * Math.PI;
+        posMap[node.id] = { x: centerX + r3 * Math.cos(angle), y: centerY + r3 * Math.sin(angle) };
+      });
+
+      // Draw Edges
+      visibleEdges.forEach(edge => {
+        const p1 = posMap[edge.source];
+        const p2 = posMap[edge.target];
+        if (p1 && p2) {
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', p1.x);
+          line.setAttribute('y1', p1.y);
+          line.setAttribute('x2', p2.x);
+          line.setAttribute('y2', p2.y);
+          line.setAttribute('stroke', '#334155');
+          line.setAttribute('stroke-width', '1.2');
+          line.setAttribute('opacity', '0.6');
+          viewport.appendChild(line);
+        }
+      });
+
+      const showAllText = document.getElementById('showLabels').checked || visibleNodes.length <= 40;
+
+      // Draw Nodes
+      visibleNodes.forEach(node => {
+        const pos = posMap[node.id];
+        if (!pos) return;
+
+        const isSelected = selectedNodeId === node.id;
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.style.cursor = 'pointer';
+        
+        // Single robust click listener attached directly to SVG node group
+        g.onclick = (e) => {
+          e.stopPropagation();
+          if (!hasDragged) {
+            selectNode(node);
+          }
+        };
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', pos.x);
+        circle.setAttribute('cy', pos.y);
+        circle.setAttribute('r', isSelected ? '13' : '9');
+
+        let fillColor = colorMap[node.type] || '#94a3b8';
+        if (highlightedNodes.has(node.id)) fillColor = '#ef4444'; // Blast radius RED
+        if (cycleNodes.has(node.id)) fillColor = '#eab308'; // Cycle YELLOW
+
+        circle.setAttribute('fill', fillColor);
+        circle.setAttribute('stroke', isSelected ? '#ffffff' : '#1e293b');
+        circle.setAttribute('stroke-width', isSelected ? '3' : '2');
+
+        // Direct DOM hover styling without re-creating DOM tree
+        g.onmouseenter = () => {
+          circle.setAttribute('r', '13');
+          circle.setAttribute('stroke', '#60a5fa');
+        };
+        g.onmouseleave = () => {
+          circle.setAttribute('r', selectedNodeId === node.id ? '13' : '9');
+          circle.setAttribute('stroke', selectedNodeId === node.id ? '#ffffff' : '#1e293b');
+        };
+
+        g.appendChild(circle);
+
+        // Text label
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', pos.x + 12);
+        text.setAttribute('y', pos.y + 4);
+        text.setAttribute('fill', isSelected ? '#ffffff' : '#cbd5e1');
+        text.setAttribute('font-size', isSelected ? '13px' : '11px');
+        text.setAttribute('font-weight', isSelected ? '700' : '400');
+        text.setAttribute('font-family', 'Inter, sans-serif');
+        text.style.pointerEvents = 'none';
+        text.textContent = node.label;
+        
+        if (showAllText || isSelected || highlightedNodes.has(node.id)) {
+          g.appendChild(text);
+        }
+
+        viewport.appendChild(g);
+      });
+
+      updateViewportTransform();
+      document.getElementById('nodeCount').innerText = `Showing: ${visibleNodes.length}/${graphData.nodes.length} Nodes | ${visibleEdges.length}/${graphData.edges.length} Edges`;
+    }
+
+    function selectNode(node) {
+      selectedNodeId = node.id;
+      document.getElementById('blastBtn').disabled = false;
+
+      const riskClass = node.risk === 'high' ? 'badge-high' : (node.risk === 'medium' ? 'badge-medium' : 'badge-low');
+
+      document.getElementById('inspectorContent').innerHTML = `
+        <div class="node-title">${escapeHtml(node.label)}</div>
+        <div class="node-meta">${node.type} • ${escapeHtml(node.file || 'Local Scope')}</div>
+        <div style="margin-bottom: 12px;">
+          Complexity Score: <span class="badge ${riskClass}">${node.complexity} (${node.risk})</span>
+        </div>
+        <div class="card-title">Source Code</div>
+        <pre><code>${escapeHtml(node.code || '// No source available for this entity')}</code></pre>
+      `;
+
+      renderGraph();
+    }
+
+    async function calculateBlastRadius() {
+      if (!selectedNodeId) return;
+      const res = await fetch(`/api/blast-radius?node_id=${encodeURIComponent(selectedNodeId)}`);
+      const list = await res.json();
+      highlightedNodes = new Set(list);
+
+      document.getElementById('blastResults').innerHTML = `
+        <strong>Impacted Entities (${list.length}):</strong><br/>
+        ${list.map(item => `• ${escapeHtml(item)}`).join('<br/>')}
+      `;
+      renderGraph();
+    }
+
+    async function checkCycles() {
+      const res = await fetch('/api/cycles');
+      const cycles = await res.json();
+      cycleNodes.clear();
+      cycles.forEach(c => c.forEach(id => cycleNodes.add(id)));
+
+      if (cycles.length === 0) {
+        alert('No circular dependencies detected!');
+      } else {
+        alert(`Detected ${cycles.length} circular dependency loop(s)!`);
+      }
+      renderGraph();
+    }
+
+    async function handleSearch() {
+      const q = document.getElementById('searchInput').value.trim();
+      if (!q) return;
+
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: q })
+      });
+      const results = await res.json();
+
+      const container = document.getElementById('searchResultsList');
+      if (results.length === 0) {
+        container.innerHTML = '<p style="color: #64748b;">No matches found.</p>';
+        return;
+      }
+
+      container.innerHTML = results.map(r => `
+        <div style="padding: 6px 0; border-bottom: 1px solid #334155; cursor: pointer;" onclick="selectNodeById('${r.node_id}')">
+          <strong style="color: #60a5fa;">${escapeHtml(r.node_id)}</strong><br/>
+          <span style="color: #94a3b8; font-size: 11px;">Similarity: ${(r.score * 100).toFixed(1)}%</span>
+        </div>
+      `).join('');
+
+      const topMatch = graphData.nodes.find(n => n.id === results[0].node_id);
+      if (topMatch) selectNode(topMatch);
+    }
+
+    function selectNodeById(id) {
+      const match = graphData.nodes.find(n => n.id === id);
+      if (match) selectNode(match);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // Export & Download Diagram as SVG File
+    function downloadDiagram() {
+      const svgEl = document.getElementById('graph-canvas');
+      const serializer = new XMLSerializer();
+      let source = serializer.serializeToString(svgEl);
+
+      if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+
+      const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      downloadLink.download = 'code_knowledge_graph.svg';
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+
+    // Zoom & Pan Engine
+    function updateViewportTransform() {
+      const viewport = document.getElementById('viewport-group');
+      viewport.setAttribute('transform', `translate(${panX}, ${panY}) scale(${zoomLevel})`);
+    }
+
+    function zoomIn() {
+      zoomLevel *= 1.25;
+      updateViewportTransform();
+    }
+
+    function zoomOut() {
+      zoomLevel /= 1.25;
+      updateViewportTransform();
+    }
+
+    function resetZoom() {
+      zoomLevel = 1;
+      panX = 0;
+      panY = 0;
+      updateViewportTransform();
+    }
+
+    const container = document.getElementById('graphContainer');
+    container.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      if (e.deltaY < 0) zoomIn();
+      else zoomOut();
+    });
+
+    container.addEventListener('mousedown', (e) => {
+      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+      isDragging = true;
+      hasDragged = false;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const dx = Math.abs(e.clientX - (startX + panX));
+      const dy = Math.abs(e.clientY - (startY + panY));
+      if (dx > 3 || dy > 3) {
+        hasDragged = true;
+      }
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      updateViewportTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    window.onload = loadGraph;
+  </script>
+</body>
+
+</html>

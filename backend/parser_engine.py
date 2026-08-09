@@ -16,8 +16,6 @@ def parse_python_file(text: str) -> Dict[str, List]:
     except SyntaxError:
         return {"functions": [], "classes": [], "imports": [], "calls": []}
 
-    lines = text.splitlines()
-
     for node in ast.walk(tree):
         # Extract function definitions
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -90,6 +88,80 @@ def parse_js_file(text: str) -> Dict[str, List]:
     }
 
 
+def parse_java_file(text: str) -> Dict[str, List]:
+    """Parse Java code (Classes, Methods, Imports, Calls) using regex."""
+    functions = []
+    classes = []
+    imports = []
+    calls = []
+
+    # Match Java class / interface / enum
+    for match in re.finditer(r"(?:public|protected|private|static|\s)+class\s+([A-Za-z_][A-Za-z0-9_]*)", text):
+        classes.append({"name": match.group(1), "code": match.group(0)})
+
+    # Match Java methods
+    method_pattern = r"(?:public|protected|private|static|\s)+[\w<>\[\]]+\s+([A-Za-z_][A-Za-z0-9_]*)\s*\([^)]*\)\s*\{"
+    keywords = {"if", "for", "while", "switch", "catch", "class", "interface", "return"}
+    for match in re.finditer(method_pattern, text):
+        m_name = match.group(1)
+        if m_name not in keywords:
+            functions.append({"name": m_name, "code": match.group(0)})
+
+    # Match Java imports
+    for match in re.finditer(r"import\s+([A-Za-z0-9_.*]+);", text):
+        imports.append({"name": match.group(1)})
+
+    # Match Java method calls
+    for match in re.finditer(r"([A-Za-z_][A-Za-z0-9_]*)\s*\(", text):
+        name = match.group(1)
+        if name not in keywords and name not in {"System", "Math", "String", "print", "println"}:
+            calls.append({"name": name})
+
+    return {
+        "functions": functions,
+        "classes": classes,
+        "imports": imports,
+        "calls": calls,
+    }
+
+
+def parse_cpp_file(text: str) -> Dict[str, List]:
+    """Parse C/C++ code (Classes, Structs, Functions, Includes, Calls) using regex."""
+    functions = []
+    classes = []
+    imports = []
+    calls = []
+
+    # Match C++ class / struct
+    for match in re.finditer(r"(?:class|struct)\s+([A-Za-z_][A-Za-z0-9_]*)", text):
+        classes.append({"name": match.group(1), "code": match.group(0)})
+
+    # Match C/C++ functions
+    func_pattern = r"(?:[\w:*&<>]+\s+)+([A-Za-z_][A-Za-z0-9_]*)\s*\([^)]*\)\s*\{"
+    keywords = {"if", "for", "while", "switch", "catch", "return", "class", "struct", "sizeof"}
+    for match in re.finditer(func_pattern, text):
+        f_name = match.group(1)
+        if f_name not in keywords:
+            functions.append({"name": f_name, "code": match.group(0)})
+
+    # Match #include directives
+    for match in re.finditer(r"#include\s+[<\"]([^>\"]+)[>\"]", text):
+        imports.append({"name": match.group(1)})
+
+    # Match function calls
+    for match in re.finditer(r"([A-Za-z_][A-Za-z0-9_]*)\s*\(", text):
+        name = match.group(1)
+        if name not in keywords and name not in {"printf", "scanf", "cout", "cin"}:
+            calls.append({"name": name})
+
+    return {
+        "functions": functions,
+        "classes": classes,
+        "imports": imports,
+        "calls": calls,
+    }
+
+
 def parse_file(file_path: str) -> Dict:
     """Read a file and parse code entities depending on file extension."""
     abs_path = os.path.abspath(file_path)
@@ -103,6 +175,12 @@ def parse_file(file_path: str) -> Dict:
     elif ext in {".js", ".jsx", ".ts", ".tsx"}:
         parsed = parse_js_file(text)
         lang = "javascript"
+    elif ext == ".java":
+        parsed = parse_java_file(text)
+        lang = "java"
+    elif ext in {".cpp", ".hpp", ".c", ".h", ".cc", ".cxx"}:
+        parsed = parse_cpp_file(text)
+        lang = "cpp"
     else:
         parsed = {"functions": [], "classes": [], "imports": [], "calls": []}
         lang = "text"
